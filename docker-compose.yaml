@@ -1,0 +1,79 @@
+version: '2.9'
+
+services:
+
+  staff-plan-localstack:
+    image: localstack/localstack
+    container_name: staff-plan-localstack
+    hostname: staff-plan-localstack
+    healthcheck:
+      test: curl http://localhost:4566/_localstack/health | json_pp
+      interval: 1m15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    environment:
+      - SERVICES=cloudformation,apigateway,lambda,s3
+      - EAGER_SERVICE_LOADING=1
+      - LAMBDA_EXECUTOR=local
+      - LOCALSTACK_HOSTNAME=0.0.0.0
+      - DATA_DIR=/tmp/localstack/data
+      - DEBUG=1
+    volumes:
+      - staff-plan-localstack-volume:/tmp/localstack
+      - ~/.aws:/root/.aws
+    ports:
+      - '4566:4566'
+  
+  staff-plan-db-server:
+    image: postgres:latest
+    container_name: staff-plan-db-server
+    healthcheck:
+      test: pg_isready
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - staff-plan-db-server-volume:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - '1234:5432'
+
+  staff-plan-db-admin:
+    image: dpage/pgadmin4
+    container_name: staff-plan-db-admin
+    volumes:
+      - staff-plan-db-admin-volume:/var/lib/pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${DB_ADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${DB_ADMIN_PASSWORD}
+    ports:
+      - '1235:80'
+    depends_on:
+      staff-plan-db-server:
+        condition: service_healthy
+        
+  staff-plan-db-migrate:
+    image: migrate/migrate
+    container_name: staff-plan-db-migrate
+    volumes:
+      - ./staff-plan-db/migrations:/migrations
+        
+volumes:
+
+  staff-plan-localstack-volume:
+    driver: local
+  
+  staff-plan-db-server-volume:
+    driver: local
+  
+  staff-plan-db-admin-volume:
+    driver: local
+
+networks:
+
+  default:
+    name: staff-plan-net
