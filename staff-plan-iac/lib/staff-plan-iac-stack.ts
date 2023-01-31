@@ -19,7 +19,7 @@ export class StaffPlanIacStack extends cdk.Stack {
     //   visibilityTimeout: cdk.Duration.seconds(300)
     // });
     
-    const securityFunc = new lambda.Function(this, 'SecurityFunc', {
+    const secFunc = new lambda.Function(this, 'SecurityFunc', {
       code: lambda.Code.fromAsset(path.join(__dirname, '../../'), {
         bundling: {
           image: cdk.DockerImage.fromRegistry("golang:1.19"),
@@ -46,8 +46,7 @@ export class StaffPlanIacStack extends cdk.Stack {
 
     const apiGateway = new apigateway.RestApi(this, 'StaffPlanApi');
     const apiResource = apiGateway.root.addResource("api");
-    const securityResource = apiResource.addResource("security");
-    securityResource.addResource("login").addMethod("POST", new apigateway.LambdaIntegration(securityFunc));
-    securityResource.addResource("health").addMethod("ANY", new apigateway.LambdaIntegration(securityFunc));
+    
+    apiResource.addResource("security").addResource("{proxy+}").addMethod("ANY", new apigateway.LambdaIntegration(secFunc));
   }
 }

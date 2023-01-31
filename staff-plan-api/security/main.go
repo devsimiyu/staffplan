@@ -29,10 +29,12 @@ func main() {
 	authRepo := repo.NewAuthDbDao(db)
 	authController := controller.NewAuthController(authRepo)
 	healthController := controller.NewHealthController()
+	notFoundController := controller.NewNotFoundController()
 
 	http.HandleFunc("/api/security/login", authController.Login)
+	http.HandleFunc("/api/security/user", authController.User)
 	http.Handle("/api/security/health", healthController)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("Resource not found")) })
+	http.Handle("/", notFoundController)
 
 	if _, ok := os.LookupEnv("IS_LAMBDA"); ok {
 		util.LogInfo("launching lambda function")

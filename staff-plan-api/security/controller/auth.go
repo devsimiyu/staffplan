@@ -45,3 +45,16 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(res)
 	}
 }
+
+func (c *AuthController) User(w http.ResponseWriter, r *http.Request) {
+	auth, ok := r.Header["Authorization"]
+
+	if !ok {
+		util.LogErr(fmt.Sprintf("no auth token provided for route: %s", r.URL.Path))
+		http.Error(w, "authorization token is required", http.StatusForbidden)
+
+	} else {
+		util.LogInfo(fmt.Sprintf("auth token: %s", auth))
+		w.Write([]byte("authentication success"))
+	}
+}
